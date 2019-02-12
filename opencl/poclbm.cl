@@ -101,10 +101,6 @@ void search(
    const uint metro6,
    const uint metro7,
 
-   // after this, 256 bits of 0
-   // 32 bits of 80000000
-   // 32 bits of 0
-   // 32 bits of 000005A8
 #ifndef GOFFSET
    const u base,
 #endif
@@ -150,7 +146,6 @@ void search(
     W[14]=0x00000000;
     W[15]=0x00000380;
 
-    //__attribute__((opencl_unroll_hint))
     for (int j = 0; j < 64; j++) {
         if (j>=16) {
             W[j] = O1(W[j-2]) + W[j-7] + O0(W[j-15]) + W[j-16];

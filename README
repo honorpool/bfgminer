@@ -1,4 +1,4 @@
-THIS IS BUILT FOR BLE  (Bitcoin Low Energy) Protocol, and sha256.
+THIS IS BUILT FOR BLE  (Bitcoin Low Energy) Protocol, sha256d-le.  NOT sha256d
 
 It will not work for any coins not using the same algo.
 
@@ -6,6 +6,7 @@ It will not work for any coins not using the same algo.
 Quick and dirty command line.
 bfgminer.exe -o stratum+tcp://stratum.honorpool.org:5506  -u JTud48h4gpK3TWP1vKTiVj13z9KKL9J885.bfgdonate -p x --auto-gpu -S opencl:auto
 
+username is user.worker format for the pool.
 
 
 BTC donation address: 1L5L1JbZ9wEpkBKhn63gKmAvhCiA3uuoiA (honorpool)
