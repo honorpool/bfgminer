@@ -935,7 +935,7 @@ void noncelog(const struct work * const work)
 	size_t ret;
 	
 	bin2hex(hash, work->hash, 32);
-	bin2hex(data, work->data, 80);
+	bin2hex(data, work->data, 112);
 	bin2hex(midstate, work->midstate, 32);
 	
 	// timestamp,proc,hash,data,midstate
@@ -3584,10 +3584,10 @@ static bool work_decode(struct pool *pool, struct work *work, json_t *val)
 			}
 		}
 #endif
-		if (blkmk_get_data(tmpl, work->data, 80, tv_now.tv_sec, NULL, &work->dataid) < 76)
+		if (blkmk_get_data(tmpl, work->data, 112, tv_now.tv_sec, NULL, &work->dataid) < 76)
 			return false;
-		swap32yes(work->data, work->data, 80 / 4);
-		memcpy(&work->data[80], workpadding_bin, 48);
+		swap32yes(work->data, work->data, 112 / 4);
+		memcpy(&work->data[112], workpadding_bin, 16);
 		
 		work->ntime_roll_limits = (struct ntime_roll_limits){
 			.min = tmpl->mintime,
@@ -3658,7 +3658,7 @@ static bool work_decode(struct pool *pool, struct work *work, json_t *val)
 	if (work->tr)
 	{
 		blktemplate_t * const tmpl = work->tr->tmpl;
-		uint8_t buf[80];
+		uint8_t buf[112];
 		int16_t expire;
 		uint8_t *cbtxn;
 		size_t cbtxnsz;
@@ -5378,18 +5378,18 @@ static char *submit_upstream_work_request(struct work *work)
 		json_t *req;
 		unsigned char data[80];
 		
-		swap32yes(data, work->data, 80 / 4);
+		swap32yes(data, work->data, 112 / 4);
 #if BLKMAKER_VERSION > 6
 		if (work->stratum) {
-			req = blkmk_submitm_jansson(tmpl, data, bytes_buf(&work->nonce2), bytes_len(&work->nonce2), le32toh(*((uint32_t*)&work->data[76])), work->do_foreign_submit);
+			req = blkmk_submitm_jansson(tmpl, data, bytes_buf(&work->nonce2), bytes_len(&work->nonce2), le32toh(*((uint32_t*)&work->data[108])), work->do_foreign_submit);
 		} else
 #endif
 #if BLKMAKER_VERSION > 3
 		if (work->do_foreign_submit)
-			req = blkmk_submit_foreign_jansson(tmpl, data, work->dataid, le32toh(*((uint32_t*)&work->data[76])));
+			req = blkmk_submit_foreign_jansson(tmpl, data, work->dataid, le32toh(*((uint32_t*)&work->data[108])));
 		else
 #endif
-			req = blkmk_submit_jansson(tmpl, data, work->dataid, le32toh(*((uint32_t*)&work->data[76])));
+			req = blkmk_submit_jansson(tmpl, data, work->dataid, le32toh(*((uint32_t*)&work->data[108])));
 		s = json_dumps(req, 0);
 		json_decref(req);
 		sd = malloc(161);
@@ -6443,10 +6443,10 @@ static void roll_work(struct work *work)
 	if (work->tr)
 	{
 		struct timeval tv_now;
-		cgtime(&tv_now);
-		if (blkmk_get_data(work->tr->tmpl, work->data, 80, tv_now.tv_sec, NULL, &work->dataid) < 76)
+		cgtime(&tv_now); 
+		if (blkmk_get_data(work->tr->tmpl, work->data, 112, tv_now.tv_sec, NULL, &work->dataid) < 76)
 			applog(LOG_ERR, "Failed to get next data from template; spinning wheels!");
-		swap32yes(work->data, work->data, 80 / 4);
+		swap32yes(work->data, work->data, 112 / 4);
 		calc_midstate(work);
 		applog(LOG_DEBUG, "Successfully rolled extranonce to dataid %u", work->dataid);
 	} else {
@@ -6454,7 +6454,7 @@ static void roll_work(struct work *work)
 	uint32_t *work_ntime;
 	uint32_t ntime;
 
-	work_ntime = (uint32_t *)(work->data + 68);
+	work_ntime = (uint32_t *)(work->data + 100);
 	ntime = be32toh(*work_ntime);
 	ntime++;
 	*work_ntime = htobe32(ntime);
@@ -6494,7 +6494,7 @@ static void _copy_work(struct work *work, const struct work *base_work, int noff
 	
 	if (noffset)
 	{
-		uint32_t *work_ntime = (uint32_t *)(work->data + 68);
+		uint32_t *work_ntime = (uint32_t *)(work->data + 100);
 		uint32_t ntime = be32toh(*work_ntime);
 
 		ntime += noffset;
@@ -6737,7 +6737,8 @@ void work_check_for_block(struct work * const work)
 		work->pool->solved++;
 		found_blocks++;
 		work->mandatory = true;
-		applog(LOG_NOTICE, "Found block for pool %d!", work->pool->pool_no);
+		//ble reduce noise
+		//applog(LOG_NOTICE, "Found block for pool %d!", work->pool->pool_no);
 	}
 }
 
@@ -7036,9 +7037,9 @@ next_write_sws_del:
 			
 			sshare->work = copy_work(work);
 			bin2hex(nonce2hex, bytes_buf(&work->nonce2), bytes_len(&work->nonce2));
-			nonce = *((uint32_t *)(work->data + 76));
+			nonce = *((uint32_t *)(work->data + 108));
 			bin2hex(noncehex, (const unsigned char *)&nonce, 4);
-			bin2hex(ntimehex, (void *)&work->data[68], 4);
+			bin2hex(ntimehex, (void *)&work->data[100], 4);
 			
 			mutex_lock(&sshare_lock);
 			/* Give the stratum share a unique id */
@@ -7598,7 +7599,7 @@ static bool test_work_current(struct work *work)
 		if (unlikely(new_blocks == 1))
 			goto out_free;
 		
-		if (!work->stratum)
+		if (!work->stratum && 0 == 1)
 		{
 			if (work->longpoll)
 			{
@@ -7644,10 +7645,11 @@ static bool test_work_current(struct work *work)
 					// in the real world.
 					char hexstr[65];
 					blkhashstr(hexstr, prevblkhash);
-					applog(LOG_WARNING, "%s %d is issuing work for an old block: %s",
-					       work->longpoll ? "Longpoll from pool" : "Pool",
-					       pool->pool_no,
-					       hexstr);
+					//reduce ble noise.
+					//applog(LOG_WARNING, "%s %d is issuing work for an old block: %s",
+					//       work->longpoll ? "Longpoll from pool" : "Pool",
+					//       pool->pool_no,
+					//       hexstr);
 				}
 			}
 		}
@@ -10337,7 +10339,7 @@ bool pool_has_usable_swork(const struct pool * const pool)
 static void gen_stratum_work(struct pool *pool, struct work *work)
 {
 	clean_work(work);
-	
+
 	cg_wlock(&pool->data_lock);
 	
 	const int n2size = pool->swork.n2size;
@@ -10377,9 +10379,10 @@ void gen_stratum_work2(struct work *work, struct stratum_work *swork)
 	
 	if (opt_debug)
 	{
-		char header[161];
+		char header[225];
 		char nonce2hex[(bytes_len(&work->nonce2) * 2) + 1];
-		bin2hex(header, work->data, 80);
+		bin2hex(header, work->data, 112);
+		header[225] = 0x00;
 		bin2hex(nonce2hex, bytes_buf(&work->nonce2), bytes_len(&work->nonce2));
 		applog(LOG_DEBUG, "Generated stratum header %s", header);
 		applog(LOG_DEBUG, "Work job_id %s nonce2 %s", work->job_id, nonce2hex);
@@ -10388,6 +10391,7 @@ void gen_stratum_work2(struct work *work, struct stratum_work *swork)
 
 void gen_stratum_work3(struct work * const work, struct stratum_work * const swork, cglock_t * const data_lock_p)
 {
+
 	unsigned char *coinbase, merkle_root[32], merkle_sha[64];
 	uint8_t *merkle_bin;
 	uint32_t *data32, *swap32;
@@ -10410,10 +10414,12 @@ void gen_stratum_work3(struct work * const work, struct stratum_work * const swo
 	
 	memcpy(&work->data[0], swork->header1, 36);
 	memcpy(&work->data[36], merkle_root, 32);
-	*((uint32_t*)&work->data[68]) = htobe32(swork->ntime + timer_elapsed(&swork->tv_received, NULL));
-	memcpy(&work->data[72], swork->diffbits, 4);
-	memset(&work->data[76], 0, 4);  // nonce
-	memcpy(&work->data[80], workpadding_bin, 48);
+	memcpy(&work->data[68], swork->metronome, 32);
+	
+	*((uint32_t*)&work->data[100]) = htobe32(swork->ntime + timer_elapsed(&swork->tv_received, NULL));
+	memcpy(&work->data[104], swork->diffbits, 4);
+	memset(&work->data[108], 0, 4);  // nonce
+	memcpy(&work->data[112], workpadding_bin, 16);
 	
 	work->ntime_roll_limits = swork->ntime_roll_limits;
 
@@ -10521,9 +10527,9 @@ struct work *get_work(struct thr_info *thr)
 		const float min_nonce_diff = drv_min_nonce_diff(cgpu->drv, cgpu, work_mining_algorithm(work));
 		if (unlikely(work->work_difficulty < min_nonce_diff))
 		{
-			if (min_nonce_diff - work->work_difficulty > 1./0x10000000)
-				applog(LOG_WARNING, "%"PRIpreprv": Using work with lower difficulty than device supports",
-				       cgpu->proc_repr);
+			//if (min_nonce_diff - work->work_difficulty > 1./0x10000000)
+//				applog(LOG_WARNING, "%"PRIpreprv": Using work with lower difficulty than device supports",
+				       //cgpu->proc_repr);
 			work->nonce_diff = min_nonce_diff;
 		}
 		else
@@ -10664,7 +10670,7 @@ bool test_hash(const void * const phash, const float diff)
 
 enum test_nonce2_result _test_nonce2(struct work *work, uint32_t nonce, bool checktarget)
 {
-	uint32_t *work_nonce = (uint32_t *)(work->data + 64 + 12);
+	uint32_t *work_nonce = (uint32_t *)(work->data + 108);
 	*work_nonce = htole32(nonce);
 
 	work_hash(work);
@@ -10713,7 +10719,7 @@ bool submit_noffset_nonce(struct thr_info *thr, struct work *work_in, uint32_t n
 	struct work *work = make_work();
 	_copy_work(work, work_in, noffset);
 	
-	uint32_t *work_nonce = (uint32_t *)(work->data + 64 + 12);
+	uint32_t *work_nonce = (uint32_t *)(work->data + 108);
 	struct timeval tv_work_found;
 	enum test_nonce2_result res;
 	bool ret = true;
@@ -11768,17 +11774,19 @@ void bfg_watchdog(struct cgpu_info * const cgpu, struct timeval * const tvp_now)
 			if (!strcmp(cgpu->drv->dname, "cpu"))
 				return;
 #endif
-			if (cgpu->status != LIFE_WELL && (tvp_now->tv_sec - thr->last.tv_sec < WATCHDOG_SICK_TIME)) {
+			if ((cgpu->status != LIFE_WELL && cgpu->status != LIFE_SLEEP) && (tvp_now->tv_sec - thr->last.tv_sec < WATCHDOG_SICK_TIME)) {
 				if (likely(cgpu->status != LIFE_INIT && cgpu->status != LIFE_INIT2))
 				applog(LOG_ERR, "%s: Recovered, declaring WELL!", dev_str);
 				cgpu->status = LIFE_WELL;
 				cgpu->device_last_well = time(NULL);
-			} else if (cgpu->status == LIFE_WELL && (tvp_now->tv_sec - thr->last.tv_sec > WATCHDOG_SICK_TIME)) {
+			} else if (cgpu->status == LIFE_WELL && (tvp_now->tv_sec - thr->last.tv_sec > WATCHDOG_SICK_TIME) && !g_metronome_sleep) {
 				thr->rolling = cgpu->rolling = 0;
 				cgpu->status = LIFE_SICK;
+				thr->last.tv_sec = tvp_now->tv_sec;
 				applog(LOG_ERR, "%s: Idle for more than 60 seconds, declaring SICK!", dev_str);
 				cgtime(&thr->sick);
 
+			
 				dev_error(cgpu, REASON_DEV_SICK_IDLE_60);
 				run_cmd(cmd_sick);
 				
@@ -11799,7 +11807,16 @@ void bfg_watchdog(struct cgpu_info * const cgpu, struct timeval * const tvp_now)
 				cgtime(&thr->sick);
 				if (opt_restart)
 					reinit_device(cgpu);
+			} else if (g_metronome_sleep) { 
+					if (tvp_now->tv_sec - thr->last.tv_sec > 60 ) {
+						thr->last.tv_sec  = tvp_now->tv_sec ;
+						applog(LOG_NOTICE,"Waiting for metronome beat...");
+
+					}
+					cgtime(&thr->sleep);
+					cgpu->status = LIFE_SLEEP;					
 			}
+
 }
 
 static void log_print_status(struct cgpu_info *cgpu)

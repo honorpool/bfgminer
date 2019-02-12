@@ -2612,7 +2612,7 @@ incomplete_cb:
 
 static bool parse_notify(struct pool *pool, json_t *val)
 {
-	const char *prev_hash, *coinbase1, *coinbase2, *bbversion, *nbit, *ntime;
+	const char *prev_hash, *coinbase1, *coinbase2, *bbversion, *nbit, *ntime, *metronome_hash;
 	char *job_id;
 	bool clean, ret = false;
 	int merkles, i;
@@ -2635,8 +2635,27 @@ static bool parse_notify(struct pool *pool, json_t *val)
 	nbit = __json_array_string(val, 6);
 	ntime = __json_array_string(val, 7);
 	clean = json_is_true(json_array_get(val, 8));
+	metronome_hash = __json_array_string(val, 9);
 
-	if (!prev_hash || !coinbase1 || !coinbase2 || !bbversion || !nbit || !ntime)
+	if (strlen(metronome_hash) == 0 ) {
+		if (!g_metronome_sleep) {
+			applog(LOG_WARNING,"Entering Sleep Mode..");
+			g_metronome_sleep = true;
+		}
+		metronome_hash = "0000000000000000000000000000000000000000000000000000000000000000";
+	} else {
+		if (g_metronome_sleep) {
+			applog(LOG_WARNING,"Starting Job..");
+			g_metronome_sleep =  false;
+		}
+	}
+
+	if (!metronome_hash) {
+		applog(LOG_ERR, "Stratum notify: invalid metronome parameter: %s", metronome_hash);
+		//goto out;
+	}
+
+	if (!prev_hash || !coinbase1 || !coinbase2 || !bbversion || !nbit || !ntime || !metronome_hash)
 		goto out;
 	
 	job_id = json_array_string(val, 0);
@@ -2683,6 +2702,9 @@ static bool parse_notify(struct pool *pool, json_t *val)
 	
 	hex2bin(&pool->swork.header1[0], bbversion,  4);
 	hex2bin(&pool->swork.header1[4], prev_hash, 32);
+
+	hex2bin(&pool->swork.metronome[0], metronome_hash, 32);
+
 	hex2bin((void*)&pool->swork.ntime, ntime, 4);
 	pool->swork.ntime = be32toh(pool->swork.ntime);
 	hex2bin(&pool->swork.diffbits[0], nbit, 4);
@@ -2719,6 +2741,7 @@ static bool parse_notify(struct pool *pool, json_t *val)
 	{
 		applog(LOG_DEBUG, "job_id: %s", job_id);
 		applog(LOG_DEBUG, "prev_hash: %s", prev_hash);
+		applog(LOG_DEBUG, "metronome_hash: %s", metronome_hash);
 		applog(LOG_DEBUG, "coinbase1: %s", coinbase1);
 		applog(LOG_DEBUG, "coinbase2: %s", coinbase2);
 		for (i = 0; i < merkles; i++)
@@ -3134,6 +3157,9 @@ bool auth_stratum(struct pool *pool)
 					break;
 				else
 				if (!strcmp(json_string_value(j_id), "xnsub"))
+					unknown = false;
+				else
+				if (!strcmp(json_string_value(j_id), "pong"))
 					unknown = false;
 			}
 			if (unknown)

@@ -22,13 +22,22 @@
 static
 void hash_data(void *out_hash, const void *data)
 {
-	unsigned char blkheader[80];
+	unsigned char blkheader[112];
 	
 	// data is past the first SHA256 step (padding and interpreting as big endian on a little endian platform), so we need to flip each 32-bit chunk around to get the original input block header
-	swap32yes(blkheader, data, 80 / 4);
+	swap32yes(blkheader, data, 112 / 4);
 	
 	// double-SHA256 to get the block hash
-	gen_hash(blkheader, out_hash, 80);
+	gen_hash(blkheader, out_hash, 112);
+
+	char output[250];
+	bin2hex(output, blkheader, 112);
+	applog(LOG_DEBUG, "header: %s", output);
+
+	bin2hex(output, out_hash, 32);
+	applog(LOG_DEBUG, "hash %s", output);
+
+
 }
 
 #ifdef USE_OPENCL
@@ -48,6 +57,9 @@ static
 char *opencl_get_default_kernel_file_sha256d(const struct mining_algorithm * const malgo, struct cgpu_info * const cgpu, struct _clState * const clState)
 {
 	const char * const vbuff = clState->platform_ver_str;
+//force kernel
+	applog(LOG_INFO, "Selecting BLE kernel");
+	return strdup("poclbm");
 	
 	if (clState->is_mesa)
 	{

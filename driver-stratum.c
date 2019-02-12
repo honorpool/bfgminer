@@ -720,6 +720,9 @@ errout:
 	if (!strcasecmp(method, "mining.capabilities"))
 		stratumsrv_mining_capabilities(bev, params, idstr, conn);
 	else
+	if (!strcasecmp(method, "mining.ping"))
+		stratumsrv_mining_ping(bev, params, idstr, conn);
+	else
 		_stratumsrv_failure(bev, idstr, -3, "Method not supported");
 	
 	free(idstr);

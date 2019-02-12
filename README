@@ -1,3 +1,18 @@
+THIS IS BUILT FOR BLE  (Bitcoin Low Energy) Protocol, and sha256.
+
+It will not work for any coins not using the same algo.
+
+
+Quick and dirty command line.
+bfgminer.exe -o stratum+tcp://stratum.honorpool.org:5506  -u JTud48h4gpK3TWP1vKTiVj13z9KKL9J885.bfgdonate -p x --auto-gpu -S opencl:auto
+
+
+
+BTC donation address: 1L5L1JbZ9wEpkBKhn63gKmAvhCiA3uuoiA (honorpool)
+BLE donation address: JTud48h4gpK3TWP1vKTiVj13z9KKL9J885 (honorpool)
+
+
+
 BFGMiner:
 St. Barbara's Faithfully Glorified Mining Initiative Naturally Exceeding Rivals
 or Basically a Freaking Good Miner

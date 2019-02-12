@@ -109,6 +109,11 @@ struct opencl_work_data {
 	cl_uint B1addK6, PreVal0addK7, W16addK16, W17addK17;
 	cl_uint zeroA, zeroB;
 	cl_uint oneA, twoA, threeA, fourA, fiveA, sixA, sevenA;
+
+	cl_uint state0, state1, state2, state3, state4, state5, state6, state7;
+	cl_uint merkend, time, target, metro0, metro1, metro2, metro3, metro4, metro5, metro6, metro7;
+
+
 };
 #endif
 

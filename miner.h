@@ -217,6 +217,7 @@ static inline int fsync (int fd)
 enum alive {
 	LIFE_WELL,
 	LIFE_SICK,
+	LIFE_SLEEP,
 	LIFE_DEAD,
 	LIFE_NOSTART,
 	LIFE_INIT,
@@ -628,6 +629,7 @@ struct thr_info {
 	void *cgpu_data;
 	struct timeval last;
 	struct timeval sick;
+	struct timeval sleep;
 
 	bool	scanhash_working;
 	uint64_t hashes_done;
@@ -1299,6 +1301,7 @@ struct stratum_work {
 	bytes_t merkle_bin;
 	
 	uint8_t header1[36];
+	uint8_t metronome[32];
 	uint8_t diffbits[4];
 	
 	uint32_t ntime;
@@ -1338,6 +1341,8 @@ struct coinbase_param {
 	float perc;
 };
 
+bool g_metronome_sleep;
+
 struct pool {
 	int pool_no;
 	int prio;
@@ -1351,7 +1356,7 @@ struct pool {
 	int quota_gcd;
 	int quota_used;
 	int works;
-
+	
 	double diff_accepted;
 	double diff_rejected;
 	double diff_stale;

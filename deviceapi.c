@@ -214,7 +214,7 @@ int restart_wait(struct thr_info *thr, unsigned int mstime)
 		timer_set_now(&tv_now);
 	}
 }
-
+//BLE:Prepare Work / Send to Opencl
 static
 struct work *get_and_prepare_work(struct thr_info *thr)
 {
@@ -263,6 +263,15 @@ void minerloop_scanhash(struct thr_info *mythr)
 		timer_set_now(&work->tv_work_start);
 		
 		do {
+			while (g_metronome_sleep) {
+			#ifdef _MSC_VER
+							usleep(200);
+			#else 
+							usleep(200000);
+			#endif
+			continue;
+			}
+
 			thread_reportin(mythr);
 			/* Only allow the mining thread to be cancelled when
 			* it is not in the driver code. */

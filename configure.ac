@@ -332,19 +332,15 @@ m4_define([BFG_DRIVER],[
 ])
 
 
-AC_CHECK_DECL([HASH_ITER],[
-	AC_CHECK_DECL([DL_CONCAT],[
-		true
-	],[
-		AC_MSG_ERROR([Could not find DL_FOREACH_SAFE - install uthash-dev 1.9.4+])
-	],[
+
+#disabled check .. just make sure these files exist in the src directory (uthash)
+[
 		#include <utlist.h>
-	])
-],[
-	AC_MSG_ERROR([Could not find HASH_ITER - please install uthash-dev 1.9.4+])
-],[
+]
+[
 	#include <uthash.h>
-])
+]
+
 
 
 ddyes=yes

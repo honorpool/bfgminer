@@ -67,6 +67,7 @@ static const char GPUSEP = ',';
 static const char *APIVERSION = "3.1";
 static const char *DEAD = "Dead";
 static const char *SICK = "Sick";
+static const char *SLEEP = "Sleep";
 static const char *NOSTART = "NoStart";
 static const char *INIT = "Initialising";
 static const char *WAIT = "Waiting";
@@ -1374,6 +1375,8 @@ static const char *status2str(enum alive status)
 			return ALIVE;
 		case LIFE_SICK:
 			return SICK;
+		case LIFE_SLEEP:
+			return SLEEP;
 		case LIFE_DEAD:
 		case LIFE_DEAD2:
 			return DEAD;

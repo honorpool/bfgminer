@@ -917,9 +917,6 @@ void opencl_wlogprint_status(struct cgpu_info *cgpu)
 			case LIFE_SICK:
 				tailsprintf(logline, sizeof(logline), "SICK reported in %s", checkin);
 				break;
-			case LIFE_SLEEP:
-				tailsprintf(logline, sizeof(logline), "Wake me up when its block time ");
-				break;
 			case LIFE_DEAD:
 				tailsprintf(logline, sizeof(logline), "DEAD reported in %s", checkin);
 				break;
@@ -1031,28 +1028,22 @@ cl_int queue_poclbm_kernel(const struct opencl_kernel_info * const kinfo, _clSta
 	unsigned int num = 0;
 	cl_int status = 0;
 
-	CL_SET_BLKARG(state0);
-	CL_SET_BLKARG(state1);
-	CL_SET_BLKARG(state2);
-	CL_SET_BLKARG(state3);
-	CL_SET_BLKARG(state4);
-	CL_SET_BLKARG(state5);
-	CL_SET_BLKARG(state6);
-	CL_SET_BLKARG(state7);
+	CL_SET_BLKARG(ctx_a);
+	CL_SET_BLKARG(ctx_b);
+	CL_SET_BLKARG(ctx_c);
+	CL_SET_BLKARG(ctx_d);
+	CL_SET_BLKARG(ctx_e);
+	CL_SET_BLKARG(ctx_f);
+	CL_SET_BLKARG(ctx_g);
+	CL_SET_BLKARG(ctx_h);
 
-	CL_SET_BLKARG(merkend);
-	CL_SET_BLKARG(time);
+	CL_SET_BLKARG(cty_b);
+	CL_SET_BLKARG(cty_c);
 
 	
-	CL_SET_BLKARG(target);
-	CL_SET_BLKARG(metro0);
-	CL_SET_BLKARG(metro1);
-	CL_SET_BLKARG(metro2);
-	CL_SET_BLKARG(metro3);
-	CL_SET_BLKARG(metro4);
-	CL_SET_BLKARG(metro5);
-	CL_SET_BLKARG(metro6);
-	CL_SET_BLKARG(metro7);
+	CL_SET_BLKARG(cty_f);
+	CL_SET_BLKARG(cty_g);
+	CL_SET_BLKARG(cty_h);
 
 	if (!kinfo->goffset)
 	{
@@ -1060,12 +1051,25 @@ cl_int queue_poclbm_kernel(const struct opencl_kernel_info * const kinfo, _clSta
 		uint *nonces = alloca(sizeof(uint) * vwidth);
 		unsigned int i;
 
-		for (i = 0; i < vwidth; i++) {
-//                    applog(LOG_WARNING, "nonce: %u: vwidth: %u, threads: %u", work->blk.nonce, vwidth, threads);
+		for (i = 0; i < vwidth; i++)
 			nonces[i] = work->blk.nonce + (i * threads);
-                }
 		CL_SET_VARG(vwidth, nonces);
 	}
+
+	CL_SET_BLKARG(fW0);
+	CL_SET_BLKARG(fW1);
+	CL_SET_BLKARG(fW2);
+	CL_SET_BLKARG(fW3);
+	CL_SET_BLKARG(fW15);
+	CL_SET_BLKARG(fW01r);
+
+	CL_SET_BLKARG(D1A);
+	CL_SET_BLKARG(C1addK5);
+	CL_SET_BLKARG(B1addK6);
+	CL_SET_BLKARG(W16addK16);
+	CL_SET_BLKARG(W17addK17);
+	CL_SET_BLKARG(PreVal4addT1);
+	CL_SET_BLKARG(PreVal0);
 
 	CL_SET_ARG(clState->outputBuffer);
 
@@ -1284,7 +1288,7 @@ cl_int queue_fullheader_kernel(const struct opencl_kernel_info * const kinfo, _c
 		CL_SET_ARG(nonce_base);
 	}
 	
-	swap32yes(blkheader, work->data, 112/4);
+	swap32yes(blkheader, work->data, 80/4);
 	status = clEnqueueWriteBuffer(clState->commandQueue, clState->CLbuffer0, CL_TRUE, 0, sizeof(blkheader), blkheader, 0, NULL, NULL);
 	
 	CL_SET_ARG(clState->CLbuffer0);
@@ -1814,7 +1818,7 @@ static int64_t opencl_scanhash(struct thr_info *thr, struct work *work,
 	if (hashes > gpu->max_hashes)
 		gpu->max_hashes = hashes;
 
-	status = kinfo->queue_kernel_parameters(kinfo, clState, work, globalThreads[0]); // this calls queue_poclbm_kernel HTMLCOIN
+	status = kinfo->queue_kernel_parameters(kinfo, clState, work, globalThreads[0]);
 	if (unlikely(status != CL_SUCCESS)) {
 		applog(LOG_ERR, "Error: clSetKernelArg of all params failed.");
 		return -1;

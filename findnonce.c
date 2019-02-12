@@ -50,87 +50,27 @@ const uint32_t SHA256_K[64] = {
 
 void precalc_hash(struct opencl_work_data *blk, uint32_t *state, uint32_t *data)
 {
-	cl_uint A, B, C, D, E, F, G, H;
 
-	A = state[0];
-	B = state[1];
-	C = state[2];
-	D = state[3];
-	E = state[4];
-	F = state[5];
-	G = state[6];
-	H = state[7];
+    blk->state0=state[0];
+    blk->state1=state[1];
+    blk->state2=state[2];
+    blk->state3=state[3];
+    blk->state4=state[4];
+    blk->state5=state[5];
+    blk->state6=state[6];
+    blk->state7=state[7];
+    blk->merkend=data[0];
+    blk->metro0=data[1];
+    blk->metro1=data[2];
+    blk->metro2=data[3];
+    blk->metro3=data[4];
+    blk->metro4=data[5];
+    blk->metro5=data[6];
+    blk->metro6=data[7];
+    blk->metro7=data[8];
+    blk->time=data[9];
+    blk->target=data[10];
 
-	R(A, B, C, D, E, F, G, H, data[0], SHA256_K[0]);
-	R(H, A, B, C, D, E, F, G, data[1], SHA256_K[1]);
-	R(G, H, A, B, C, D, E, F, data[2], SHA256_K[2]);
-
-	blk->cty_a = A;
-	blk->cty_b = B;
-	blk->cty_c = C;
-	blk->cty_d = D;
-
-	blk->D1A = D + 0xb956c25b;
-
-	blk->cty_e = E;
-	blk->cty_f = F;
-	blk->cty_g = G;
-	blk->cty_h = H;
-
-	blk->ctx_a = state[0];
-	blk->ctx_b = state[1];
-	blk->ctx_c = state[2];
-	blk->ctx_d = state[3];
-	blk->ctx_e = state[4];
-	blk->ctx_f = state[5];
-	blk->ctx_g = state[6];
-	blk->ctx_h = state[7];
-
-	blk->merkle = data[0];
-	blk->ntime = data[1];
-	blk->nbits = data[2];
-
-	blk->W16 = blk->fW0 = data[0] + (rotr(data[1], 7) ^ rotr(data[1], 18) ^ (data[1] >> 3));
-	blk->W17 = blk->fW1 = data[1] + (rotr(data[2], 7) ^ rotr(data[2], 18) ^ (data[2] >> 3)) + 0x01100000;
-	blk->PreVal4 = blk->fcty_e = blk->ctx_e + (rotr(B, 6) ^ rotr(B, 11) ^ rotr(B, 25)) + (D ^ (B & (C ^ D))) + 0xe9b5dba5;
-	blk->T1 = blk->fcty_e2 = (rotr(F, 2) ^ rotr(F, 13) ^ rotr(F, 22)) + ((F & G) | (H & (F | G)));
-	blk->PreVal4_2 = blk->PreVal4 + blk->T1;
-	blk->PreVal0 = blk->PreVal4 + blk->ctx_a;
-	blk->PreW31 = 0x00000280 + (rotr(blk->W16,  7) ^ rotr(blk->W16, 18) ^ (blk->W16 >> 3));
-	blk->PreW32 = blk->W16 + (rotr(blk->W17, 7) ^ rotr(blk->W17, 18) ^ (blk->W17 >> 3));
-	blk->PreW18 = data[2] + (rotr(blk->W16, 17) ^ rotr(blk->W16, 19) ^ (blk->W16 >> 10));
-	blk->PreW19 = 0x11002000 + (rotr(blk->W17, 17) ^ rotr(blk->W17, 19) ^ (blk->W17 >> 10));
-
-
-	blk->W2 = data[2];
-
-	blk->W2A = blk->W2 + (rotr(blk->W16, 19) ^ rotr(blk->W16, 17) ^ (blk->W16 >> 10));
-	blk->W17_2 = 0x11002000 + (rotr(blk->W17, 19) ^ rotr(blk->W17, 17) ^ (blk->W17 >> 10));
-
-	blk->fW2 = data[2] + (rotr(blk->fW0, 17) ^ rotr(blk->fW0, 19) ^ (blk->fW0 >> 10));
-	blk->fW3 = 0x11002000 + (rotr(blk->fW1, 17) ^ rotr(blk->fW1, 19) ^ (blk->fW1 >> 10));
-	blk->fW15 = 0x00000280 + (rotr(blk->fW0, 7) ^ rotr(blk->fW0, 18) ^ (blk->fW0 >> 3));
-	blk->fW01r = blk->fW0 + (rotr(blk->fW1, 7) ^ rotr(blk->fW1, 18) ^ (blk->fW1 >> 3));
-
-
-	blk->PreVal4addT1 = blk->PreVal4 + blk->T1;
-	blk->T1substate0 = blk->ctx_a - blk->T1;
-
-	blk->C1addK5 = blk->cty_c + SHA256_K[5];
-	blk->B1addK6 = blk->cty_b + SHA256_K[6];
-	blk->PreVal0addK7 = blk->PreVal0 + SHA256_K[7];
-	blk->W16addK16 = blk->W16 + SHA256_K[16];
-	blk->W17addK17 = blk->W17 + SHA256_K[17];
-
-	blk->zeroA = blk->ctx_a + 0x98c7e2a2;
-	blk->zeroB = blk->ctx_a + 0xfc08884d;
-	blk->oneA = blk->ctx_b + 0x90bb1e3c;
-	blk->twoA = blk->ctx_c + 0x50c6645b;
-	blk->threeA = blk->ctx_d + 0x3ac42e24;
-	blk->fourA = blk->ctx_e + SHA256_K[4];
-	blk->fiveA = blk->ctx_f + SHA256_K[5];
-	blk->sixA = blk->ctx_g + SHA256_K[6];
-	blk->sevenA = blk->ctx_h + SHA256_K[7];
 }
 #endif
 
